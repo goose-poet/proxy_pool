@@ -11,7 +11,8 @@
 -------------------------------------------------
 """
 __author__ = 'JHao'
-
+import sys
+sys.path.append("..")
 from db.dbClient import DbClient
 
 
