@@ -16,9 +16,10 @@ __author__ = 'JHao'
 
 import os
 import sys
-
+sys.path.append("..")
 from util.six import urlparse, withMetaclass
 from util.singleton import Singleton
+from handler.configHandler import ConfigHandler
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -77,6 +78,8 @@ class DbClient(withMetaclass(Singleton)):
             __type = "ssdbClient"
         elif "REDIS" == self.db_type:
             __type = "redisClient"
+        elif "MONGODB" == self.db_type:
+            __type = "mongodbClient"
         else:
             pass
         assert __type, 'type error, Not support DB type: {}'.format(self.db_type)
@@ -118,3 +121,9 @@ class DbClient(withMetaclass(Singleton)):
 
     def test(self):
         return self.client.test()
+
+
+if __name__ == '__main__':
+    conf = ConfigHandler()
+    db = DbClient(conf.dbConn)
+    # db.changeTable(conf.tableName)
