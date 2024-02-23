@@ -36,7 +36,7 @@ class MongodbClient(object):
         :param password: password
         :return:
         """
-        self.name = ""
+        self.name = "use_proxy"
         kwargs.pop("username")
         kwargs.pop("db")
         self.__conn = MongoConnect(serverSelectionTimeoutMS=5000, socketTimeoutMS=5000, **kwargs)['proxy_pool']
@@ -55,12 +55,17 @@ class MongodbClient(object):
         #     proxy = choice(proxies) if proxies else None
         #     return self.__conn.hget(self.name, proxy) if proxy else None
         if https:
-            proxies = self.__conn[self.name].find({"https": True})
-            return choice(proxies) if proxies.count() else None
+            pipeline = [
+                {'$match': {'https': True}},  # 添加查询条件
+                {'$sample': {'size': 1}}  # 随机选择一个文档
+            ]
         else:
-            proxies = self.__conn[self.name].find()
-            proxy = choice(proxies) if proxies.count() else None
-            return proxy if proxy else None
+            pipeline = [
+                {'$sample': {'size': 1}}  # 随机选择一个文档
+            ]
+        result = list(self.__conn[self.name].aggregate(pipeline))
+        # result[0].pop("_id") if result else None
+        return json.dumps(result[0]) if result else None
 
     def put(self, proxy_obj):
         """
@@ -68,7 +73,9 @@ class MongodbClient(object):
         :param proxy_obj: Proxy obj
         :return:
         """
-        result = self.__conn.hset(self.name, proxy_obj.proxy, proxy_obj.to_json)
+        filter_query = {'_id': proxy_obj.proxy}
+        update_data = {'$set': proxy_obj.to_dict}
+        result = self.__conn[self.name].update_one(filter_query, update_data, upsert=True).acknowledged
         return result
 
     def pop(self, https):
@@ -76,26 +83,26 @@ class MongodbClient(object):
         顺序弹出一个代理
         :return: proxy
         """
-        proxy = self.get(https)
-        if proxy:
-            self.__conn.hdel(self.name, json.loads(proxy).get("proxy", ""))
-        return proxy if proxy else None
+        if https:
+            return self.__conn[self.name].find_one_and_delete({'https': True})
+        else:
+            return self.__conn[self.name].find_one_and_delete({})
 
     def delete(self, proxy_str):
         """
-        移除指定代理, 使用changeTable指定hash name
+        移除指定代理
         :param proxy_str: proxy str
         :return:
         """
-        self.__conn.hdel(self.name, proxy_str)
+        self.__conn[self.name].delete_one(proxy_str)
 
     def exists(self, proxy_str):
         """
-        判断指定代理是否存在, 使用changeTable指定hash name
+        判断指定代理是否存在
         :param proxy_str: proxy str
         :return:
         """
-        return self.__conn.hexists(self.name, proxy_str)
+        return True if self.__conn[self.name].find_one(proxy_str) else False
 
     def update(self, proxy_obj):
         """
@@ -103,25 +110,28 @@ class MongodbClient(object):
         :param proxy_obj:
         :return:
         """
-        self.__conn.hset(self.name, proxy_obj.proxy, proxy_obj.to_json)
+        filter_query = {'_id': proxy_obj.proxy}
+        update_data = {'$set': proxy_obj.to_dict}
+        self.__conn[self.name].update_one(filter_query, update_data, upsert=True)
 
     def getAll(self, https):
         """
-        字典形式返回所有代理, 使用changeTable指定hash name
+        字典形式返回所有代理
         :return:
         """
         proxies = self.__conn[self.name].find()
+
         if https:
-            return [proxy for proxy in proxies if proxy.get("https")]
+            return [json.dumps(proxy) for proxy in proxies if proxy.get("https")]
         else:
-            return list(proxies)
+            return [json.dumps(proxy) for proxy in proxies]
 
     def clear(self):
         """
-        清空所有代理, 使用changeTable指定hash name
+        清空所有代理
         :return:
         """
-        return self.__conn.delete(self.name)
+        return self.__conn[self.name].delete_many({})
 
     def getCount(self):
         """

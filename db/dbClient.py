@@ -16,7 +16,7 @@ __author__ = 'JHao'
 
 import os
 import sys
-sys.path.append("..")
+
 from util.six import urlparse, withMetaclass
 from util.singleton import Singleton
 from handler.configHandler import ConfigHandler
@@ -121,9 +121,3 @@ class DbClient(withMetaclass(Singleton)):
 
     def test(self):
         return self.client.test()
-
-
-if __name__ == '__main__':
-    conf = ConfigHandler()
-    db = DbClient(conf.dbConn)
-    # db.changeTable(conf.tableName)

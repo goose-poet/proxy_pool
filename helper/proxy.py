@@ -18,7 +18,7 @@ import json
 class Proxy(object):
 
     def __init__(self, proxy, fail_count=0, region="", anonymous="",
-                 source="", check_count=0, last_status="", last_time="", https=False):
+                 source="", check_count=0, last_status="", last_time="", https=False, _id=None):
         self._proxy = proxy
         self._fail_count = fail_count
         self._region = region
