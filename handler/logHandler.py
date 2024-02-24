@@ -53,8 +53,9 @@ class LogHandler(logging.Logger):
         if stream:
             self.__setStreamHandler__()
         if file:
-            if platform.system() != "Windows":
-                self.__setFileHandler__()
+            # if platform.system() != "Windows":
+            # 写入本地文件
+            self.__setFileHandler__()
 
     def __setFileHandler__(self, level=None):
         """
