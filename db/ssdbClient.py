@@ -86,7 +86,7 @@ class SsdbClient(object):
         :param proxy_str: proxy str
         :return:
         """
-        self.__conn.hdel(self.name, proxy_str)
+        return self.__conn.hdel(self.name, proxy_str)
 
     def exists(self, proxy_str):
         """

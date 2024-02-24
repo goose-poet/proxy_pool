@@ -94,7 +94,7 @@ class MongodbClient(object):
         :param proxy_str: proxy str
         :return:
         """
-        self.__conn[self.name].delete_one(proxy_str)
+        return self.__conn[self.name].delete_one({'_id': proxy_str}).acknowledged
 
     def exists(self, proxy_str):
         """
